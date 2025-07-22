@@ -1,7 +1,8 @@
-from statsmodels.distributions.copula.api import CopulaDistribution, GaussianCopula
+#from statsmodels.distributions.copula.api import CopulaDistribution, GaussianCopula
 from statsmodels.stats.proportion import proportions_ztest
 from stqdm import stqdm
 from scipy import stats
+from scipy.stats import norm, multivariate_normal
 import numpy as np
 import networkx as nx
 import streamlit as st
@@ -16,7 +17,36 @@ import tensorflow as tf
 from tensorflow import keras
 from sklearn.model_selection import train_test_split
 
+def gaussian_copula_sampling(n_samples, correlation_matrix, marginal_dists=None):
+    """
+    Generates samples from a Gaussian Copula.
 
+    Args:
+        n_samples (int): Number of samples to generate.
+        correlation_matrix (np.ndarray): The correlation matrix for the Gaussian copula.
+        marginal_dists (list, optional): A list of scipy.stats distributions 
+                                          for the desired marginals. 
+                                          If None, standard normal marginals are used.
+
+    Returns:
+        np.ndarray: An array of samples from the Gaussian Copula.
+    """
+    n_variables = correlation_matrix.shape[0]
+
+    # 1. Simulate from multivariate standard normal
+    Z = multivariate_normal.rvs(mean=np.zeros(n_variables), cov=correlation_matrix, size=n_samples)
+
+    # 2. Convert to uniform margins using standard normal CDF
+    U = norm.cdf(Z)
+
+    # 3. Apply inverse CDF of desired marginal distributions (if specified)
+    if marginal_dists:
+        if len(marginal_dists) != n_variables:
+            raise ValueError("Number of marginal distributions must match number of variables.")
+        X = np.zeros_like(U)
+        for i in range(n_variables):
+            X[:, i] = marginal_dists[i].ppf(U[:, i])
+        return X
 
 def TrialDataSimOneArm(n_sim, n_ss, n_hypo, dist_type, normal_param, binom_param, corr_mat):
   """
@@ -58,12 +88,13 @@ def TrialDataSimOneArm(n_sim, n_ss, n_hypo, dist_type, normal_param, binom_param
       print("Error:Marginal types should be Continuous (Normal) or Binary (binomial)")
       break
 
-  copula= GaussianCopula(corr=corr_mat, k_dim=n_hypo)
-  joint_dist= CopulaDistribution(copula=copula, marginals=marginal_dist)
+  #copula= GaussianCopula(corr=corr_mat, k_dim=n_hypo)
+  #joint_dist= CopulaDistribution(copula=copula, marginals=marginal_dist)
 
   TrialData=np.empty(shape=(n_sim,n_ss,n_hypo))
   for i in range(n_sim):
-    samples= joint_dist.rvs(n_ss)
+    #samples= joint_dist.rvs(n_ss)
+    samples=  gaussian_copula_sampling(n_ss, correlation_matrix=corr_mat, marginal_distributions=marginal_dist)
     TrialData[i,:,:]=samples
 
   return TrialData
@@ -406,3 +437,4 @@ def optimal_graph_draw(alpha_weights, transition_weights, hypotheses_names,
     nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels_straight, label_pos=edge_font_position,
 				font_color=edge_font_color, font_size=edge_font_size, font_family=edge_font)
     return st.pyplot(fig)
+
