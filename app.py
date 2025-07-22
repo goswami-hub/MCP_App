@@ -8,7 +8,7 @@ import streamlit as st
 
 #Functions
 def main():
-    st.title("Hello Streamlit Lovers")
+    st.title("Histing Through Streamlit")
 
 if __name__=="__main__":
     main()
