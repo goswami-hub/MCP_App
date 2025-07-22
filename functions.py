@@ -11,10 +11,10 @@ import base64
 import matplotlib.pyplot as plt
 
 
-import os
-os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
-import tensorflow as tf
-from tensorflow import keras
+#import os
+#os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
+#import tensorflow as tf
+#from tensorflow import keras
 from sklearn.model_selection import train_test_split
 
 def gaussian_copula_sampling(n_samples, correlation_matrix, marginal_dists=None):
@@ -307,53 +307,6 @@ def SimGainLoss(n_hypo, n_graph, n_sim, alpha_w, transition_w, sim_pvalues, gain
   return gain_sim, power_sim, alpha_w, transition_w
 
 
-# Functions for NN module
-
-def select_initializer(option):
-            if option=='Random Normal':
-                value=keras.initializers.RandomNormal(mean=0.0, stddev=1.0)
-            elif option=='Random Uniform':
-                value=keras.initializers.RandomUniform(minval=-1.0, maxval=1.0)
-            elif option=='zeros':
-                value=keras.initializers.Zeros()
-            elif option=='Xavier Uniform':
-                value=keras.initializers.GlorotUniform()
-            else:
-                value==keras.initializers.GlorotNormal()
-            return value
-
-@st.cache_data()
-def build_model_1L(nparam,h_act, h_kern_init, h_bias_init,h1_nodes):
-    model=keras.models.Sequential(
-        [
-        keras.layers.Dense(input_dim=nparam, 
-              units=h1_nodes, 
-              activation=h_act,
-              kernel_initializer=select_initializer(h_kern_init),
-              bias_initializer=select_initializer(h_bias_init)),
-        keras.layers.Dense(1, activation='relu')
-        ]
-    )
-
-    return model
-@st.cache_data()
-def build_model_2L(nparam,h_act, h_kern_init, h_bias_init,h1_nodes,h2_nodes):
-    model=keras.models.Sequential(
-        [
-        keras.layers.Dense(input_dim=nparam, 
-                           units=h1_nodes, 
-                           activation=h_act,
-                           kernel_initializer=select_initializer(h_kern_init),
-                           bias_initializer=select_initializer(h_bias_init)),
-        keras.layers.Dense(units=h2_nodes, 
-                           activation=h_act,
-                           kernel_initializer=select_initializer(h_kern_init),
-                           bias_initializer=select_initializer(h_bias_init)),
-        keras.layers.Dense(1,activation='relu')
-        ]
-    )
-
-    return model
 @st.cache_data()
 def load_data(data, nhypo, test_prop):
         # Drop redundant columns
@@ -382,11 +335,6 @@ def load_data(data, nhypo, test_prop):
 
         return X_train, X_test, y_train, y_test
 
-def download_model(model):
-    output_model = pickle.dumps(model)
-    b64 = base64.b64encode(output_model).decode()
-    href = f'<a href="data:file/output_model;base64,{b64}" download="myfile.pkl">Download Trained Model .pkl File</a>'
-    st.markdown(href, unsafe_allow_html=True)
 
 def optimal_graph_draw(alpha_weights, transition_weights, hypotheses_names, 
                        layout_seed=3, fig_height=8, fig_width=8, arrow_size=10,
