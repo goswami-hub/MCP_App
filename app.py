@@ -32,7 +32,7 @@ def ann_page():
         
 def optim_page():
         st.header("Optimize ANN to Find Optimal Graph")
-        #optimization()
+        optimization()
 
 
 stc.html(html_temp)
